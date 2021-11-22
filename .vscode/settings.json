@@ -1,0 +1,8 @@
+{
+    "solidity.defaultCompiler": "embedded",
+    "solidity.packageDefaultDependenciesContractsDirectory": "",
+    "solidity.packageDefaultDependenciesDirectory": "node_modules",
+    "cSpell.words": [
+        "typechain"
+    ]
+}
