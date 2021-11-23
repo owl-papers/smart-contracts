@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "./Articles.sol";
 
 /**
  * @title A contract that handles who will be reviewing a paper
@@ -24,12 +25,27 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
     uint256 public randomValue;
     address[] public selectedReviewers;
     EnumerableSet.AddressSet private possibleReviewers;
-
+    Paper public paper;
+    Paper[] public reviewPapers;
+    State public currentState;
     ValidateRandom public isvalid;
+    address[] public sentReviews;
+    mapping(address => bool) public hasSubmited;
+
+    struct Paper {
+        address nft;
+        uint256 tokenId;
+    }
 
     enum ValidateRandom {
         valid,
         invalid
+    }
+
+    enum State {
+        WAITING_FOR_START,
+        STARTED,
+        FINISEHD
     }
 
     /**
@@ -56,6 +72,49 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         sKeyhash = keyHash;
         sFee = fee; // 0.1 LINK (Varies by network)
         isvalid = ValidateRandom.invalid;
+        currentState = State.WAITING_FOR_START;
+    }
+
+    modifier onlySelectedReviewers() {
+        bool isSelected = false;
+        for (uint256 i = 0; i < selectedReviewers.length; i++) {
+            if (selectedReviewers[i] == msg.sender) {
+                isSelected = true;
+                break;
+            }
+        }
+
+        require(isSelected, "reviewer not in selected reviewers");
+        _;
+    }
+
+    /**
+     * @notice sets the paper to be reviewed
+     * @param _nftContract address to the Article ERC1155
+     * @param _tokenId Id of the paper in the contract
+     */
+    function setPaperToReview(address _nftContract, uint256 _tokenId)
+        public
+        onlyOwner
+    {
+        require(
+            currentState == State.WAITING_FOR_START,
+            "not Waiting for start state"
+        );
+        Articles articles = Articles(_nftContract);
+        address creator = articles.creators(_tokenId);
+        require(
+            creator == msg.sender,
+            "only the creator can request make reviews of his work"
+        );
+        paper = Paper(_nftContract, _tokenId);
+    }
+
+    function sendReview(address _nftContract, uint256 _tokenId) public onlySelectedReviewers {
+        require(hasSubmited[msg.sender] == false, "revieiwer already submited");
+        Paper memory p = Paper(_nftContract, _tokenId);
+        reviewPapers.push(p);
+        hasSubmited[msg.sender] = true;
     }
 
     /**
@@ -100,10 +159,10 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
             "cannot call review assignment, not enough reviewers joined"
         );
 
+        currentState = State.STARTED;
         uint256 amountOfReviewers = (randomValue % 4) + 2;
         getRandomAddresses(amountOfReviewers);
     }
-
 
     /**
      * @dev Auxiliary function to return the array of selected reviewrs.
@@ -111,9 +170,8 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
     function getSelectedReviewers() public view returns (address[] memory) {
         return selectedReviewers;
     }
-    
 
-     /**
+    /**
      * @notice researchers that wants his work reviewed MUST call this function.
      * before assinging reviewers. 
 ]    */
@@ -134,11 +192,9 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         possibleReviewers.add(msg.sender);
     }
 
-
-
     /**
      * @dev this function comes from VRFConsumerBase. It is necessary to get the random number.
-    */
+     */
     function fulfillRandomness(bytes32 requestId, uint256 randomness)
         internal
         override
