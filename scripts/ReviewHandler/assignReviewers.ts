@@ -4,8 +4,12 @@ async function main() {
   const [owner] = await ethers.getSigners();
   const ReviewHandler = await ethers.getContractFactory("ReviewHandler");
   const reviewHandler = ReviewHandler.connect(owner).attach(
-    "0xCA4D5e4C466100C3bBf407e28Cb5f8Fa1aD8C7dC"
+    "0x0A31d74904804571cE89dF1A3Cc245fB52eA038C"
   );
+
+  // // call this first. It takes a while so it's better to execute this script and
+  // rerurn it with the line below commented.
+  // await reviewHandler.assignReviewers();
 
   const randomNumber = await reviewHandler.randomValue();
   console.log(randomNumber.toString());
