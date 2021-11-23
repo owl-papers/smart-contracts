@@ -17,7 +17,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
  * Reviewers call the joinAsReviewer function to have a chance to be elegible for a right to review.
  * @custom:experimental This is an experimental contract.
  */
-contract PrototypeReviewHandler is  Ownable {
+contract PrototypeReviewHandler is Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     bytes32 private sKeyhash;
     uint256 private sFee;
@@ -32,14 +32,13 @@ contract PrototypeReviewHandler is  Ownable {
         invalid
     }
 
-    constructor(
-    )  {
-        randomValue = 49123412385124901238412094;
+    constructor() {
+        randomValue = 49123412385124901238412097;
         isvalid = ValidateRandom.invalid;
     }
 
     /**
-     * @dev returns a Set of random unique values between 0 and _amount.
+     * @dev sets the selectedReviewers
      * @param _amount Maxmium value of random generated values
      */
     function getRandomAddresses(uint256 _amount) internal onlyOwner {
@@ -47,7 +46,7 @@ contract PrototypeReviewHandler is  Ownable {
             isvalid == ValidateRandom.valid,
             "not elegible for random selection yet"
         );
-        uint256 i  =0;
+        uint256 i = 0;
         while (selectedReviewers.length != _amount) {
             uint256 generated = (uint256(
                 keccak256(abi.encode(randomValue, i))
@@ -82,13 +81,12 @@ contract PrototypeReviewHandler is  Ownable {
 
         uint256 amountOfReviewers = (randomValue % 4) + 2;
         getRandomAddresses(amountOfReviewers);
-
     }
 
     function getSelectedReviewers() public view returns (address[] memory) {
         return selectedReviewers;
     }
-    
+
     function fullfill() public {
         isvalid = ValidateRandom.valid;
     }
@@ -101,6 +99,4 @@ contract PrototypeReviewHandler is  Ownable {
         require(msg.sender != owner(), "you cannot review yourself");
         possibleReviewers.add(msg.sender);
     }
-
-
 }

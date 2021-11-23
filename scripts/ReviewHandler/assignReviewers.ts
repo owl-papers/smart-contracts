@@ -4,17 +4,13 @@ async function main() {
   const [owner] = await ethers.getSigners();
   const ReviewHandler = await ethers.getContractFactory("ReviewHandler");
   const reviewHandler = ReviewHandler.connect(owner).attach(
-    "0x34d1d16244D2765f6d65F4A781CCFCE951c3a76c"
+    "0xCA4D5e4C466100C3bBf407e28Cb5f8Fa1aD8C7dC"
   );
 
   const randomNumber = await reviewHandler.randomValue();
   console.log(randomNumber.toString());
 
-  // console.log(reviewHandler.selectedReviewers(0));
-  // console.log(reviewHandler.selectedReviewers(1));
   const result = await reviewHandler.getSelectedReviewers();
-  const position0 = await reviewHandler.selectedReviewers(0);
-  console.log(position0.toString());
   console.log(result.toString());
 }
 
