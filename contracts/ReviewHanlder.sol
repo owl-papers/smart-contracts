@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 
 pragma solidity ^0.8.0;
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -97,10 +96,7 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
     modifier onlyCreator(address _nftContract, uint256 _tokenId) {
         Articles articles = Articles(_nftContract);
         address creator = articles.creators(_tokenId);
-        require(
-            creator == msg.sender,
-            "only the creator can send a review"
-        );
+        require(creator == msg.sender, "only the creator can send a review");
         _;
     }
 
@@ -172,9 +168,6 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
      * contract it will be done. It is a further improvement.
 ]    */
     function assignReviewers() public onlyOwner {
-        console.log("possible voters length");
-
-        console.log(possibleReviewers.length());
         require(
             possibleReviewers.length() >= 5,
             "cannot call review assignment, not enough reviewers joined"

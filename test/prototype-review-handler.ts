@@ -79,30 +79,31 @@ describe("Review Handler", function () {
     console.log(randomNumber.toString());
   });
 
-  it("should allow author to get assign reviewersw", async () => {
+  let reviewers: string[] = [];
+  it("should allow author to get assign reviewers", async () => {
     const [owner] = await ethers.getSigners();
     const tx1 = await reviewHandler.connect(owner).assignReviewers();
     await tx1.wait();
-    const reviewers = await reviewHandler.getSelectedReviewers();
-    console.log(reviewers);
+    reviewers = await reviewHandler.getSelectedReviewers();
   });
 
-  // it("Reviewers should be able to send reviews", async () => {
-  //   const accounts = await ethers.getSigners();
+  it("Reviewers should be able to send reviews", async () => {
+    const accounts = await ethers.getSigners();
 
-  //   for (let i = 1; i < 9; i++) {
-  //     console.log("conta:", accounts[i].address);
-  //     const articleCreation = await articles
-  //       .connect(accounts[i])
-  //       .create(
-  //         "1",
-  //         "ipfs://bafyreibfwky2egu4s3irpwqwsktepknz6htv6yae5236lbtkyffnlg4kau/metadata.json"
-  //       );
-  //     await articleCreation.wait();
-  //     const latestId = await articles.getLatestId();
-  //     await reviewHandler
-  //       .connect(accounts[i])
-  //       .sendReview(articles.address, latestId.sub(1).toString());
-  //   }
-  // });
+    for (let i = 1; i < 9; i++) {
+      if (reviewers.indexOf(accounts[i].address) >= 0) {
+        const articleCreation = await articles
+          .connect(accounts[i])
+          .create(
+            "1",
+            "ipfs://bafyreibfwky2egu4s3irpwqwsktepknz6htv6yae5236lbtkyffnlg4kau/metadata.json"
+          );
+        await articleCreation.wait();
+        const latestId = await articles.getLatestId();
+        await reviewHandler
+          .connect(accounts[i])
+          .sendReview(articles.address, latestId.sub(1).toString());
+      }
+    }
+  });
 });

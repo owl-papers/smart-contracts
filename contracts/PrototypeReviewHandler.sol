@@ -97,10 +97,7 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
     modifier onlyCreator(address _nftContract, uint256 _tokenId) {
         Articles articles = Articles(_nftContract);
         address creator = articles.creators(_tokenId);
-        require(
-            creator == msg.sender,
-            "only the creator can send a review"
-        );
+        require(creator == msg.sender, "only the creator can send a review");
         _;
     }
 
@@ -172,9 +169,6 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
      * contract it will be done. It is a further improvement.
 ]    */
     function assignReviewers() public onlyOwner {
-        console.log("possible voters length");
-
-        console.log(possibleReviewers.length());
         require(
             possibleReviewers.length() >= 5,
             "cannot call review assignment, not enough reviewers joined"
@@ -203,9 +197,8 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
         //     "Not enough LINK - fill contract with faucet"
         // );
         // requestId = requestRandomness(sKeyhash, sFee);
-       requestId  = keccak256(abi.encodePacked("sample"));
+        requestId = keccak256(abi.encodePacked("sample"));
         fulfillRandomness(requestId, randomValue);
-
     }
 
     /**
