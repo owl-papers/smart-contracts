@@ -89,7 +89,7 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
      * ended. After it's proven that reviewers were not biased towards the author, they should receive their
      * reward. 
      * NOTE: A proof of humanity process should be done, does not mean that in the current development of this
-     * contract it will be done. s 
+     * contract it will be done. It is a further improvement.
 ]    */
     function assignReviewers() public onlyOwner {
         console.log("possible voters length");
@@ -104,10 +104,19 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         getRandomAddresses(amountOfReviewers);
     }
 
+
+    /**
+     * @dev Auxiliary function to return the array of selected reviewrs.
+]    */
     function getSelectedReviewers() public view returns (address[] memory) {
         return selectedReviewers;
     }
+    
 
+     /**
+     * @notice researchers that wants his work reviewed MUST call this function.
+     * before assinging reviewers. 
+]    */
     function getRandomNumber() public returns (bytes32 requestId) {
         require(
             LINK.balanceOf(address(this)) >= sFee,
@@ -125,6 +134,11 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         possibleReviewers.add(msg.sender);
     }
 
+
+
+    /**
+     * @dev this function comes from VRFConsumerBase. It is necessary to get the random number.
+    */
     function fulfillRandomness(bytes32 requestId, uint256 randomness)
         internal
         override
