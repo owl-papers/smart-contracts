@@ -17,7 +17,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
  * Reviewers call the joinAsReviewer function to have a chance to be elegible for a right to review.
  * @custom:experimental This is an experimental contract.
  */
-contract ReviewHandler is VRFConsumerBase, Ownable {
+contract PrototypeReviewHandler is  Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.UintSet;
     bytes32 private sKeyhash;
@@ -34,29 +34,9 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         invalid
     }
 
-    /**
-     * @notice Constructor inherits VRFConsumerBase
-     *
-     * @dev NETWORK: MUMBAI
-     * @dev   Chainlink VRF Coordinator address: 0x8C7382F9D8f56b33781fE506E897a4F1e2d17255
-     * @dev   LINK token address:                0x326C977E6efc84E512bB9C30f76E30c160eD06FB
-     * @dev   Key Hash:   0x6e75b569a01ef56d18cab6a8e71e6600d6ce853834d4a5748b720d06f878b3a4
-     * @dev   Fee:        0.0001 LINK (100000000000000)
-     *
-     * @param vrfCoordinator address of the VRF Coordinator
-     * @param link address of the LINK token
-     * @param keyHash bytes32 representing the hash of the VRF job
-     * @param fee uint256 fee to pay the VRF oracle
-     */
-
     constructor(
-        address vrfCoordinator,
-        address link,
-        bytes32 keyHash,
-        uint256 fee
-    ) VRFConsumerBase(vrfCoordinator, link) {
-        sKeyhash = keyHash;
-        sFee = fee; // 0.1 LINK (Varies by network)
+    )  {
+        randomValue = 49123412385124901238412093;
         isvalid = ValidateRandom.invalid;
     }
 
@@ -115,13 +95,6 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         return selectedReviewers;
     }
 
-    function getRandomNumber() public returns (bytes32 requestId) {
-        require(
-            LINK.balanceOf(address(this)) >= sFee,
-            "Not enough LINK - fill contract with faucet"
-        );
-        requestId = requestRandomness(sKeyhash, sFee);
-    }
 
     /**
      * @notice reviewers register as which category they want to write reviews.
@@ -132,11 +105,5 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         possibleReviewers.push(msg.sender);
     }
 
-    function fulfillRandomness(bytes32 requestId, uint256 randomness)
-        internal
-        override
-    {
-        randomValue = randomness;
-        isvalid = ValidateRandom.valid;
-    }
+
 }

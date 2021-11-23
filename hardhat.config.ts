@@ -56,6 +56,7 @@ const config: HardhatUserConfig = {
               String(process.env.PRIVATE_KEY_3),
               String(process.env.PRIVATE_KEY_4),
               String(process.env.PRIVATE_KEY_5),
+              String(process.env.PRIVATE_KEY_6),
             ]
           : [],
     },

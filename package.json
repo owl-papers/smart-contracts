@@ -3,7 +3,9 @@
     "prettier": "prettier --write contracts/**/*.sol",
     "lint": "solhint --fix contracts/**/*.sol",
     "test": "hardhat test",
-    "compile": "hardhat compile"
+    "compile": "hardhat compile",
+    "test:review-contract": "npx hardhat test test/review-handler.ts --network mumbai",
+    "script:review-contract": "npx hardhat run scripts/ReviewHandler/assignReviewers.ts --network mumbai"
   },
   "devDependencies": {
     "@chainlink/contracts": "^0.2.2",
