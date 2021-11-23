@@ -1,7 +1,6 @@
-import { expect } from "chai";
 import { ethers } from "hardhat";
-import { ReviewHandler } from "../typechain";
-import LinkTokenAbi from "../abis/LinkToken";
+import { ReviewHandler } from "../../typechain";
+import LinkTokenAbi from "../../abis/LinkToken";
 // this file is intended for testing in mumbai testnet
 
 describe("Review Handler", function () {
@@ -37,6 +36,14 @@ describe("Review Handler", function () {
     await tx1.wait();
   });
 
+  it("Should call getRandomNumber and it should set the randomValue", async () => {
+    const [owner] = await ethers.getSigners();
+    const tx1 = await reviewHandler.connect(owner).getRandomNumber();
+    await tx1.wait();
+    const randomNumber = await reviewHandler.randomValue();
+    console.log(randomNumber.toString());
+  });
+
   it("should allow 5 wallets to register as reviewers", async () => {
     const [owner, addr1, addr2, addr3, addr4, addr5] =
       await ethers.getSigners();
@@ -46,13 +53,5 @@ describe("Review Handler", function () {
     reviewHandler.connect(addr3).joinAsReviewer();
     reviewHandler.connect(addr4).joinAsReviewer();
     reviewHandler.connect(addr5).joinAsReviewer();
-  });
-
-  it("Should call getRandomNumber and it should set the randomValue", async () => {
-    const [owner] = await ethers.getSigners();
-    const tx1 = await reviewHandler.connect(owner).getRandomNumber();
-    await tx1.wait();
-    const randomNumber = await reviewHandler.randomValue();
-    console.log(randomNumber.toString());
   });
 });

@@ -75,6 +75,9 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         currentState = State.WAITING_FOR_START;
     }
 
+    /**
+     * @dev restricts a funcition to only the selected reviewers
+     */
     modifier onlySelectedReviewers() {
         bool isSelected = false;
         for (uint256 i = 0; i < selectedReviewers.length; i++) {
@@ -89,6 +92,19 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
     }
 
     /**
+     * @dev restricts function to only the creator of an NFT Paper.
+     */
+    modifier onlyCreator(address _nftContract, uint256 _tokenId) {
+        Articles articles = Articles(_nftContract);
+        address creator = articles.creators(_tokenId);
+        require(
+            creator == msg.sender,
+            "only the creator can send a review"
+        );
+        _;
+    }
+
+    /**
      * @notice sets the paper to be reviewed
      * @param _nftContract address to the Article ERC1155
      * @param _tokenId Id of the paper in the contract
@@ -96,21 +112,26 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
     function setPaperToReview(address _nftContract, uint256 _tokenId)
         public
         onlyOwner
+        onlyCreator(_nftContract, _tokenId)
     {
         require(
             currentState == State.WAITING_FOR_START,
             "not Waiting for start state"
         );
-        Articles articles = Articles(_nftContract);
-        address creator = articles.creators(_tokenId);
-        require(
-            creator == msg.sender,
-            "only the creator can request make reviews of his work"
-        );
+
         paper = Paper(_nftContract, _tokenId);
     }
 
-    function sendReview(address _nftContract, uint256 _tokenId) public onlySelectedReviewers {
+    /**
+     * @notice reviewers send their reviews here.
+     * @param _nftContract address to the Article ERC1155
+     * @param _tokenId Id of the paper in the contract
+     */
+    function sendReview(address _nftContract, uint256 _tokenId)
+        public
+        onlySelectedReviewers
+        onlyCreator(_nftContract, _tokenId)
+    {
         require(hasSubmited[msg.sender] == false, "revieiwer already submited");
         Paper memory p = Paper(_nftContract, _tokenId);
         reviewPapers.push(p);

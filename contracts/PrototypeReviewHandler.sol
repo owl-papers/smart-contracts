@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "./Articles.sol";
 
 /**
  * @title A contract that handles who will be reviewing a paper
@@ -17,24 +18,124 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
  * Reviewers call the joinAsReviewer function to have a chance to be elegible for a right to review.
  * @custom:experimental This is an experimental contract.
  */
-contract PrototypeReviewHandler is Ownable {
+contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     bytes32 private sKeyhash;
     uint256 private sFee;
     uint256 public randomValue;
     address[] public selectedReviewers;
     EnumerableSet.AddressSet private possibleReviewers;
-
+    Paper public paper;
+    Paper[] public reviewPapers;
+    State public currentState;
     ValidateRandom public isvalid;
+    address[] public sentReviews;
+    mapping(address => bool) public hasSubmited;
+
+    struct Paper {
+        address nft;
+        uint256 tokenId;
+    }
 
     enum ValidateRandom {
         valid,
         invalid
     }
 
-    constructor() {
-        randomValue = 49123412385124901238412097;
+    enum State {
+        WAITING_FOR_START,
+        STARTED,
+        FINISEHD
+    }
+
+    /**
+     * @notice Constructor inherits VRFConsumerBase
+     *
+     * @dev NETWORK: MUMBAI
+     * @dev   Chainlink VRF Coordinator address: 0x8C7382F9D8f56b33781fE506E897a4F1e2d17255
+     * @dev   LINK token address:                0x326C977E6efc84E512bB9C30f76E30c160eD06FB
+     * @dev   Key Hash:   0x6e75b569a01ef56d18cab6a8e71e6600d6ce853834d4a5748b720d06f878b3a4
+     * @dev   Fee:        0.0001 LINK (100000000000000)
+     *
+     * @param vrfCoordinator address of the VRF Coordinator
+     * @param link address of the LINK token
+     * @param keyHash bytes32 representing the hash of the VRF job
+     * @param fee uint256 fee to pay the VRF oracle
+     */
+
+    constructor(
+        address vrfCoordinator,
+        address link,
+        bytes32 keyHash,
+        uint256 fee
+    ) VRFConsumerBase(vrfCoordinator, link) {
+        sKeyhash = keyHash;
+        sFee = fee; // 0.1 LINK (Varies by network)
         isvalid = ValidateRandom.invalid;
+        currentState = State.WAITING_FOR_START;
+    }
+
+    /**
+     * @dev restricts a funcition to only the selected reviewers
+     */
+    modifier onlySelectedReviewers() {
+        bool isSelected = false;
+        for (uint256 i = 0; i < selectedReviewers.length; i++) {
+            if (selectedReviewers[i] == msg.sender) {
+                isSelected = true;
+                break;
+            }
+        }
+
+        require(isSelected, "reviewer not in selected reviewers");
+        _;
+    }
+
+    /**
+     * @dev restricts function to only the creator of an NFT Paper.
+     */
+    modifier onlyCreator(address _nftContract, uint256 _tokenId) {
+        Articles articles = Articles(_nftContract);
+        address creator = articles.creators(_tokenId);
+        require(
+            creator == msg.sender,
+            "only the creator can send a review"
+        );
+        _;
+    }
+
+    /**
+     * @notice sets the paper to be reviewed
+     * @param _nftContract address to the Article ERC1155
+     * @param _tokenId Id of the paper in the contract
+     */
+    function setPaperToReview(address _nftContract, uint256 _tokenId)
+        public
+        onlyOwner
+        onlyCreator(_nftContract, _tokenId)
+    {
+        require(
+            currentState == State.WAITING_FOR_START,
+            "not Waiting for start state"
+        );
+
+        paper = Paper(_nftContract, _tokenId);
+    }
+
+    /**
+     * @notice reviewers send their reviews here.
+     * @param _nftContract address to the Article ERC1155
+     * @param _tokenId Id of the paper in the contract
+     */
+    function sendReview(address _nftContract, uint256 _tokenId)
+        public
+        onlySelectedReviewers
+        onlyCreator(_nftContract, _tokenId)
+    {
+        require(hasSubmited[msg.sender] == false, "revieiwer already submited");
+        Paper memory p = Paper(_nftContract, _tokenId);
+        reviewPapers.push(p);
+        hasSubmited[msg.sender] = true;
     }
 
     /**
@@ -68,7 +169,7 @@ contract PrototypeReviewHandler is Ownable {
      * ended. After it's proven that reviewers were not biased towards the author, they should receive their
      * reward. 
      * NOTE: A proof of humanity process should be done, does not mean that in the current development of this
-     * contract it will be done. s 
+     * contract it will be done. It is a further improvement.
 ]    */
     function assignReviewers() public onlyOwner {
         console.log("possible voters length");
@@ -79,16 +180,32 @@ contract PrototypeReviewHandler is Ownable {
             "cannot call review assignment, not enough reviewers joined"
         );
 
+        currentState = State.STARTED;
         uint256 amountOfReviewers = (randomValue % 4) + 2;
         getRandomAddresses(amountOfReviewers);
     }
 
+    /**
+     * @dev Auxiliary function to return the array of selected reviewrs.
+]    */
     function getSelectedReviewers() public view returns (address[] memory) {
         return selectedReviewers;
     }
 
-    function fullfill() public {
-        isvalid = ValidateRandom.valid;
+    /**
+     * @notice researchers that wants his work reviewed MUST call this function.
+     * before assinging reviewers. 
+]    */
+    function getRandomNumber() public returns (bytes32 requestId) {
+        randomValue = 12309128309213098;
+        // require(
+        //     LINK.balanceOf(address(this)) >= sFee,
+        //     "Not enough LINK - fill contract with faucet"
+        // );
+        // requestId = requestRandomness(sKeyhash, sFee);
+       requestId  = keccak256(abi.encodePacked("sample"));
+        fulfillRandomness(requestId, randomValue);
+
     }
 
     /**
@@ -98,5 +215,16 @@ contract PrototypeReviewHandler is Ownable {
     function joinAsReviewer() public {
         require(msg.sender != owner(), "you cannot review yourself");
         possibleReviewers.add(msg.sender);
+    }
+
+    /**
+     * @dev this function comes from VRFConsumerBase. It is necessary to get the random number.
+     */
+    function fulfillRandomness(bytes32 requestId, uint256 randomness)
+        internal
+        override
+    {
+        randomValue = randomness;
+        isvalid = ValidateRandom.valid;
     }
 }
