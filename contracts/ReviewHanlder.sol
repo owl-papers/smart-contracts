@@ -17,13 +17,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @custom:experimental This is an experimental contract.
  */
 contract ReviewHandler is VRFConsumerBase, Ownable {
-    using EnumerableSet for EnumerableSet.AddressSet;
     bytes32 private sKeyhash;
     uint256 private sFee;
     uint256 public randomValue;
     address[] public reviewers;
-    
-
+    ValidateRandom public isvalid;
 
     enum ValidateRandom {
         valid,
@@ -53,7 +51,7 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
     ) VRFConsumerBase(vrfCoordinator, link) {
         sKeyhash = keyHash;
         sFee = fee; // 0.1 LINK (Varies by network)
-
+        isvalid = ValidateRandom.invalid;
     }
 
     /**
@@ -61,22 +59,29 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
      * @param _randomValue The value received from VRF
      * @param n How many random values to generate
      */
-    function genMulti(uint256 _randomValue, uint256 n, uint256 j)
+    function genMulti(uint256 n, uint256 j)
         public
-        pure
+        view
         returns (uint256[] memory multiRandom)
     {
+        require(
+            isvalid == ValidateRandom.valid,
+            "not elegible for random selection yet"
+        );
         multiRandom = new uint256[](n);
         for (uint256 i = 0; i < n; i++) {
-            multiRandom[i] = (uint256(keccak256(abi.encode(_randomValue, i))) % j);
+            multiRandom[i] = (uint256(keccak256(abi.encode(randomValue, i))) %
+                j);
         }
         return multiRandom;
     }
 
     function getRandomNumber() public returns (bytes32 requestId) {
-        require(LINK.balanceOf(address(this)) >= sFee, "Not enough LINK - fill contract with faucet");
+        require(
+            LINK.balanceOf(address(this)) >= sFee,
+            "Not enough LINK - fill contract with faucet"
+        );
         requestId = requestRandomness(sKeyhash, sFee);
-        
     }
 
     /**
@@ -87,15 +92,13 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         reviewers.push(msg.sender);
     }
 
-    function setRandomReviewers() public onlyOwner {
-
-    }
-
+    function setRandomReviewers() public onlyOwner {}
 
     function fulfillRandomness(bytes32 requestId, uint256 randomness)
         internal
         override
     {
         randomValue = randomness;
+        isvalid = ValidateRandom.valid;
     }
 }
