@@ -33,8 +33,19 @@ describe("Review Handler", function () {
     console.log(res.toString());
     const tx1 = await linkTokenContract
       .connect(owner)
-      .transfer(reviewHandler.address, "1000000000000000");
+      .transfer(reviewHandler.address, ethers.utils.parseUnits("0.1", "ether"));
     await tx1.wait();
+  });
+
+  it("should allow 5 wallets to register as reviewers", async () => {
+    const [owner, addr1, addr2, addr3, addr4, addr5] =
+      await ethers.getSigners();
+
+    reviewHandler.connect(addr1).joinAsReviewer();
+    reviewHandler.connect(addr2).joinAsReviewer();
+    reviewHandler.connect(addr3).joinAsReviewer();
+    reviewHandler.connect(addr4).joinAsReviewer();
+    reviewHandler.connect(addr5).joinAsReviewer();
   });
 
   it("Should call getRandomNumber and it should set the randomValue", async () => {

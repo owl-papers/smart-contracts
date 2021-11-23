@@ -94,7 +94,10 @@ contract PrototypeReviewHandler is  Ownable {
     function getSelectedReviewers() public view returns (address[] memory) {
         return selectedReviewers;
     }
-
+    
+    function fullfill() public {
+        isvalid = ValidateRandom.valid;
+    }
 
     /**
      * @notice reviewers register as which category they want to write reviews.
