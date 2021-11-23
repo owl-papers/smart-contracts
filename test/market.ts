@@ -24,39 +24,48 @@ describe("Article Marketplace", function () {
 
   it("should be able to mint some NFTs with an URI", async () => {
     const [owner] = await ethers.getSigners();
-    await articles
+    const tx1 = await articles
       .connect(owner)
       .create(
         10,
         "ipfs://bafyreicfzjkprrcv7uvogrj72tfspdeylb3axd6rxkssvbshllyc64xkni/metadata.json"
       );
-    await articles
+    const tx2 = await articles
       .connect(owner)
       .create(
         100,
         "ipfs://bafyreibw75mqtwztq52fnbvdmsf2dvpw5g2jwyg47wl3n3e6zz5nk46dkm/metadata.json"
       );
-    await articles
+    const tx3 = await articles
       .connect(owner)
       .create(
         2000,
         "ipfs://bafyreibw75mqtwztq52fnbvdmsf2dvpw5g2jwyg47wl3n3e6zz5nk46dkm/metadata.json"
       );
+
+    await tx1.wait();
+    await tx2.wait();
+    await tx3.wait();
   });
 
   it("wallet should be able to puts it's nfts on sell", async () => {
     const [owner] = await ethers.getSigners();
-    await articles.connect(owner).setApprovalForAll(market.address, true);
-    await market
+    const tx1 = await articles
+      .connect(owner)
+      .setApprovalForAll(market.address, true);
+    await tx1.wait();
+    const tx2 = await market
       .connect(owner)
       .sell(articles.address, "0", ethers.BigNumber.from(10), 1);
+    await tx2.wait();
     const balance = await articles.balanceOf(owner.address, "0");
     expect(balance.toString()).to.be.equal("9");
   });
 
   it("wallet should be able to buy some of the nfts", async () => {
     const [owner, addr2] = await ethers.getSigners();
-    await market.connect(addr2).buy("0", "1", { value: 10 });
+    const tx1 = await market.connect(addr2).buy("0", "1", { value: 10 });
+    await tx1.wait();
     const balance = await articles.balanceOf(addr2.address, "0");
     expect(balance.toString()).to.be.equal("1");
   });
