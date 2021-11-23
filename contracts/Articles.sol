@@ -11,14 +11,12 @@ contract Articles is ERC1155Supply {
     mapping(uint256 => string) private _uris;
     mapping(uint256 => address) public creators;
 
-
     event ArticleMinted(
         address indexed creator,
-        string  uri,
+        string uri,
         uint256 indexed id,
         uint256 initialSupply
     );
-
 
     constructor() ERC1155("Articles") {}
 

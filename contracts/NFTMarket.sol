@@ -29,15 +29,12 @@ contract NFTMarket is ReentrancyGuard, ERC1155Holder {
         address seller
     );
 
-    event SouldOut (
-        uint256 indexed itemId
-    );
-
+    event SouldOut(uint256 indexed itemId);
 
     constructor() {}
 
     /**
-     * @dev Makes a sell order that some buyer can fulfill
+     * @notice Makes a sell order that some buyer can fulfill
      * @param _nftContract Contract of the NFT. This NFTMarket contract does not restrict to the ERC1155 articles contract
      * but it only works for IERC1155 compilant contracts
      * @param _tokenId id of the selling item of the ERC1155
@@ -81,7 +78,7 @@ contract NFTMarket is ReentrancyGuard, ERC1155Holder {
     }
 
     /**
-     * @dev Makes a buy order to fulfill some sell order
+     * @notice Makes a buy order to fulfill some sell order
      * @param _itemId id of the selling item in this contract
      * @param _amount amount of tokens being listed
      */
