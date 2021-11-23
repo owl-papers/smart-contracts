@@ -20,11 +20,17 @@ describe("Prototype Review Handler", function () {
     const [owner, addr1, addr2, addr3, addr4, addr5] =
       await ethers.getSigners();
 
-    await reviewHandler.connect(addr1).joinAsReviewer();
-    await reviewHandler.connect(addr2).joinAsReviewer();
-    await reviewHandler.connect(addr3).joinAsReviewer();
-    await reviewHandler.connect(addr4).joinAsReviewer();
-    await reviewHandler.connect(addr5).joinAsReviewer();
+    const tx1 = await reviewHandler.connect(addr1).joinAsReviewer();
+    const tx2 = await reviewHandler.connect(addr2).joinAsReviewer();
+    const tx3 = await reviewHandler.connect(addr3).joinAsReviewer();
+    const tx4 = await reviewHandler.connect(addr4).joinAsReviewer();
+    const tx5 = await reviewHandler.connect(addr5).joinAsReviewer();
+
+    await tx1.wait();
+    await tx2.wait();
+    await tx3.wait();
+    await tx4.wait();
+    await tx5.wait();
   });
 
   it("Should execute assignReviewers", async () => {
@@ -33,13 +39,9 @@ describe("Prototype Review Handler", function () {
     await tx.wait();
   });
 
-  it("should set the list of reviewers assigned", async () => {
-    const tx = await reviewHandler.assignReviewers();
-    await tx.wait();
-  });
-
   it("should get the list of reviewers assigned", async () => {
     const res = await reviewHandler.getSelectedReviewers();
-    console.log(res.toString());
+    const addresses = res.toString().split(",");
+    console.log(addresses);
   });
 });

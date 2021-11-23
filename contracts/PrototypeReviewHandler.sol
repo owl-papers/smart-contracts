@@ -19,13 +19,11 @@ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
  */
 contract PrototypeReviewHandler is  Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
-    using EnumerableSet for EnumerableSet.UintSet;
     bytes32 private sKeyhash;
     uint256 private sFee;
     uint256 public randomValue;
-    address[] public possibleReviewers;
     address[] public selectedReviewers;
-    EnumerableSet.UintSet private randomIndexes;
+    EnumerableSet.AddressSet private possibleReviewers;
 
     ValidateRandom public isvalid;
 
@@ -36,7 +34,7 @@ contract PrototypeReviewHandler is  Ownable {
 
     constructor(
     )  {
-        randomValue = 49123412385124901238412093;
+        randomValue = 49123412385124901238412094;
         isvalid = ValidateRandom.invalid;
     }
 
@@ -44,24 +42,20 @@ contract PrototypeReviewHandler is  Ownable {
      * @dev returns a Set of random unique values between 0 and _amount.
      * @param _amount Maxmium value of random generated values
      */
-    function genMulti(uint256 _amount) internal onlyOwner {
+    function getRandomAddresses(uint256 _amount) internal onlyOwner {
         require(
             isvalid == ValidateRandom.valid,
             "not elegible for random selection yet"
         );
-
-        uint256 i = 0;
-        while (randomIndexes.length() != _amount) {
+        uint256 i  =0;
+        while (selectedReviewers.length != _amount) {
             uint256 generated = (uint256(
                 keccak256(abi.encode(randomValue, i))
-            ) % _amount);
-            if (!randomIndexes.contains(generated)) {
-                randomIndexes.add(generated);
-            }
-            i += 1;
-            if (i > _amount * 20) {
-                break;
-            }
+            ) % possibleReviewers.length());
+            address reviewer = possibleReviewers.at(generated);
+            selectedReviewers.push(reviewer);
+            possibleReviewers.remove(reviewer);
+            i++;
         }
     }
 
@@ -78,17 +72,17 @@ contract PrototypeReviewHandler is  Ownable {
      * contract it will be done. s 
 ]    */
     function assignReviewers() public onlyOwner {
+        console.log("possible voters length");
+
+        console.log(possibleReviewers.length());
         require(
-            possibleReviewers.length >= 5,
+            possibleReviewers.length() >= 5,
             "cannot call review assignment, not enough reviewers joined"
         );
 
         uint256 amountOfReviewers = (randomValue % 4) + 2;
-        genMulti(amountOfReviewers);
-        for (uint256 i = 0; i < randomIndexes.length(); i++) {
-            address selected = possibleReviewers[randomIndexes.at(i)];
-            selectedReviewers.push(selected);
-        }
+        getRandomAddresses(amountOfReviewers);
+
     }
 
     function getSelectedReviewers() public view returns (address[] memory) {
@@ -105,7 +99,7 @@ contract PrototypeReviewHandler is  Ownable {
      */
     function joinAsReviewer() public {
         require(msg.sender != owner(), "you cannot review yourself");
-        possibleReviewers.push(msg.sender);
+        possibleReviewers.add(msg.sender);
     }
 
 
