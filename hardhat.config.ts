@@ -23,7 +23,18 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 // Go to https://hardhat.org/config/ to learn more
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.4",
+  solidity: {
+    compilers: [
+      {
+        version: "0.8.4",
+      },
+      {
+        version: "0.4.24",
+        settings: {},
+      },
+    ],
+  },
+
   networks: {
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
@@ -39,7 +50,13 @@ const config: HardhatUserConfig = {
       url: process.env.MATIC_MUMBAI_URL || "",
       accounts:
         process.env.PRIVATE_KEY !== undefined
-          ? [String(process.env.PRIVATE_KEY), String(process.env.PRIVATE_KEY_2)]
+          ? [
+              String(process.env.PRIVATE_KEY),
+              String(process.env.PRIVATE_KEY_2),
+              String(process.env.PRIVATE_KEY_3),
+              String(process.env.PRIVATE_KEY_4),
+              String(process.env.PRIVATE_KEY_5),
+            ]
           : [],
     },
   },
