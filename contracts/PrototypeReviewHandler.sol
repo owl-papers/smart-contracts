@@ -38,6 +38,14 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
 
     event Transfer(address sender, address receiver, uint256 amount);
     event Deposit(address sender, uint256 amount);
+    event SentReview(address nftContract, uint256 tokenId, address from);
+    event GenratedRandom(bytes32 indexed requestId, uint256 indexed result);
+
+    event PaperToReviewSetted(
+        address nftContract,
+        uint256 tokenId,
+        address from
+    );
 
     struct Paper {
         address nft;
@@ -145,6 +153,7 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
         );
 
         paper = Paper(_nftContract, _tokenId);
+        emit PaperToReviewSetted(_nftContract, _tokenId, msg.sender);
     }
 
     /**
@@ -165,6 +174,7 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
         Paper memory p = Paper(_nftContract, _tokenId);
         reviewPapers.push(p);
         hasSubmited[msg.sender] = true;
+        emit SentReview(_nftContract, _tokenId, msg.sender);
     }
 
     /**
@@ -232,6 +242,19 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
     }
 
     /**
+     * @notice reviewers register as which category they want to write reviews.
+     * If the sender puts a category that does not exist in enum, it will simply not be selected.
+     */
+    function joinAsReviewer() public {
+        require(
+            currentState == ExecutionState.WAITING_FOR_START,
+            "review process has already started"
+        );
+        require(msg.sender != owner(), "you cannot review yourself");
+        possibleReviewers.add(msg.sender);
+    }
+
+    /**
      * @notice researchers that wants his work reviewed MUST call this function.
      * before assinging reviewers. 
      * @dev this is a prototype contract. I'm giving any number here, just to 
@@ -249,19 +272,6 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
     }
 
     /**
-     * @notice reviewers register as which category they want to write reviews.
-     * If the sender puts a category that does not exist in enum, it will simply not be selected.
-     */
-    function joinAsReviewer() public {
-        require(
-            currentState == ExecutionState.WAITING_FOR_START,
-            "review process has already started"
-        );
-        require(msg.sender != owner(), "you cannot review yourself");
-        possibleReviewers.add(msg.sender);
-    }
-
-    /**
      * @dev this function comes from VRFConsumerBase. It is necessary to get the random number.
      */
     function fulfillRandomness(bytes32 requestId, uint256 randomness)
@@ -270,5 +280,6 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
     {
         randomValue = randomness;
         isvalid = ValidateRandom.valid;
+        emit GenratedRandom(requestId, randomValue);
     }
 }
