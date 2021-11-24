@@ -26,7 +26,7 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
     EnumerableSet.AddressSet private possibleReviewers;
     Paper public paper;
     Paper[] public reviewPapers;
-    State public currentState;
+    ExecutionState public currentState;
     ValidateRandom public isvalid;
     address[] public sentReviews;
     mapping(address => bool) public hasSubmited;
@@ -41,7 +41,7 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         invalid
     }
 
-    enum State {
+    enum ExecutionState {
         WAITING_FOR_START,
         STARTED,
         FINISEHD
@@ -71,7 +71,7 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         sKeyhash = keyHash;
         sFee = fee; // 0.1 LINK (Varies by network)
         isvalid = ValidateRandom.invalid;
-        currentState = State.WAITING_FOR_START;
+        currentState = ExecutionState.WAITING_FOR_START;
     }
 
     /**
@@ -111,7 +111,7 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
         onlyCreator(_nftContract, _tokenId)
     {
         require(
-            currentState == State.WAITING_FOR_START,
+            currentState == ExecutionState.WAITING_FOR_START,
             "not Waiting for start state"
         );
 
@@ -173,7 +173,7 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
             "cannot call review assignment, not enough reviewers joined"
         );
 
-        currentState = State.STARTED;
+        currentState = ExecutionState.STARTED;
         uint256 amountOfReviewers = (randomValue % 4) + 2;
         getRandomAddresses(amountOfReviewers);
     }
