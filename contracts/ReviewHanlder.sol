@@ -15,6 +15,10 @@ import "./Articles.sol";
  * @notice  A paper author deploys this contract.
  * It uses chainlink VRF to handle randomization of selected reviewers.
  * Reviewers call the joinAsReviewer function to have a chance to be elegible for a right to review.
+ * Earning the right to review is a lottery. It is done this way because peer reviewing usually needs
+ * just a few people (2 to 5 reviewers). We want to distribute the reward for reviewing equally among them,
+ * so having too many reviewers would desincentivize them to do a good job, beucase the reward received
+ * would be a lesser peice of the total amount.
  * @custom:experimental This is an experimental contract.
  */
 contract ReviewHandler is VRFConsumerBase, Ownable {
