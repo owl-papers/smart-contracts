@@ -134,6 +134,7 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
             "not Waiting for start state"
         );
         reward += msg.value;
+        currentPaidState = PaidState.Paid;
         emit Deposit(msg.sender, msg.value);
     }
 
@@ -150,6 +151,10 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
         require(
             currentState == ExecutionState.WAITING_FOR_START,
             "not Waiting for start state"
+        );
+        require(
+            currentPaidState == PaidState.Paid,
+            "you have not setted the reward yet"
         );
 
         paper = Paper(_nftContract, _tokenId);

@@ -22,7 +22,7 @@ import "./Articles.sol";
  * @custom:experimental This is an experimental contract.
  */
 contract ReviewHandler is VRFConsumerBase, Ownable {
-using EnumerableSet for EnumerableSet.AddressSet;
+    using EnumerableSet for EnumerableSet.AddressSet;
     bytes32 private sKeyhash;
     uint256 private sFee;
     uint256 public randomValue;
@@ -137,6 +137,7 @@ using EnumerableSet for EnumerableSet.AddressSet;
             "not Waiting for start state"
         );
         reward += msg.value;
+        currentPaidState = PaidState.Paid;
         emit Deposit(msg.sender, msg.value);
     }
 
@@ -153,6 +154,10 @@ using EnumerableSet for EnumerableSet.AddressSet;
         require(
             currentState == ExecutionState.WAITING_FOR_START,
             "not Waiting for start state"
+        );
+        require(
+            currentPaidState == PaidState.Paid,
+            "you have not setted the reward yet"
         );
 
         paper = Paper(_nftContract, _tokenId);
