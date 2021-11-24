@@ -238,7 +238,7 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
      * be able to make tests locally
 ]    */
     function getRandomNumber() public returns (bytes32 requestId) {
-        randomValue = 12309128309213098;
+        randomValue = 12309312128309213098;
         // require(
         //     LINK.balanceOf(address(this)) >= sFee,
         //     "Not enough LINK - fill contract with faucet"

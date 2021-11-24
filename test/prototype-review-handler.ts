@@ -1,3 +1,4 @@
+import { expect } from "chai";
 import { ethers } from "hardhat";
 import { Articles, PrototypeReviewHandler } from "../typechain";
 
@@ -24,6 +25,13 @@ describe("Review Handler", function () {
     );
     await reviewHandler.deployed();
     console.log("deployed to:", reviewHandler.address);
+  });
+
+  it("Should send some ether value", async () => {
+    const [owner] = await ethers.getSigners();
+    await reviewHandler.connect(owner).accReward({
+      value: ethers.utils.parseUnits("2", "ether"),
+    });
   });
 
   // it("Should fund contract with LINK", async () => {
@@ -103,6 +111,18 @@ describe("Review Handler", function () {
         await reviewHandler
           .connect(accounts[i])
           .sendReview(articles.address, latestId.sub(1).toString());
+      }
+    }
+  });
+
+  it("Reviewers should claim their reward for reviewing", async () => {
+    const accounts = await ethers.getSigners();
+    for (let i = 1; i < 9; i++) {
+      if (reviewers.indexOf(accounts[i].address) >= 0) {
+        const balanceBefore = await accounts[i].getBalance();
+        await reviewHandler.connect(accounts[i]).claimReward();
+        const balanceAfter = await accounts[i].getBalance();
+        expect(balanceAfter).to.be.not.equal(balanceBefore);
       }
     }
   });
