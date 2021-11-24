@@ -23,14 +23,21 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
     bytes32 private sKeyhash;
     uint256 private sFee;
     uint256 public randomValue;
+    uint256 public reward;
+    uint256 public individualReward;
     address[] public selectedReviewers;
     EnumerableSet.AddressSet private possibleReviewers;
     Paper public paper;
     Paper[] public reviewPapers;
-    State public currentState;
+    ExecutionState public currentState;
+    PaidState public currentPaidState;
     ValidateRandom public isvalid;
     address[] public sentReviews;
     mapping(address => bool) public hasSubmited;
+    mapping(address => bool) public hasClaimed;
+
+    event Transfer(address sender, address receiver, uint256 amount);
+    event Deposit(address sender, uint256 amount);
 
     struct Paper {
         address nft;
@@ -42,10 +49,15 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
         invalid
     }
 
-    enum State {
+    enum ExecutionState {
         WAITING_FOR_START,
         STARTED,
         FINISEHD
+    }
+
+    enum PaidState {
+        notPaid,
+        Paid
     }
 
     /**
@@ -72,7 +84,8 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
         sKeyhash = keyHash;
         sFee = fee; // 0.1 LINK (Varies by network)
         isvalid = ValidateRandom.invalid;
-        currentState = State.WAITING_FOR_START;
+        currentState = ExecutionState.WAITING_FOR_START;
+        currentPaidState = PaidState.notPaid;
     }
 
     /**
@@ -102,6 +115,21 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
     }
 
     /**
+     * @notice sets the reward that will be disributed equally among reviewers.
+     * @dev I decided to make this function public beacause maybe someone else also has interest
+     * in the paper that is being reviwed. So they can also send some value as an incentive
+     */
+    function accReward() public payable {
+        require(msg.value > 0, "some value is needed");
+        require(
+            currentState == ExecutionState.WAITING_FOR_START,
+            "not Waiting for start state"
+        );
+        reward += msg.value;
+        emit Deposit(msg.sender, msg.value);
+    }
+
+    /**
      * @notice sets the paper to be reviewed
      * @param _nftContract address to the Article ERC1155
      * @param _tokenId Id of the paper in the contract
@@ -112,7 +140,7 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
         onlyCreator(_nftContract, _tokenId)
     {
         require(
-            currentState == State.WAITING_FOR_START,
+            currentState == ExecutionState.WAITING_FOR_START,
             "not Waiting for start state"
         );
 
@@ -129,6 +157,10 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
         onlySelectedReviewers
         onlyCreator(_nftContract, _tokenId)
     {
+        require(
+            currentState == ExecutionState.STARTED,
+            "review process has not started yet"
+        );
         require(hasSubmited[msg.sender] == false, "revieiwer already submited");
         Paper memory p = Paper(_nftContract, _tokenId);
         reviewPapers.push(p);
@@ -174,9 +206,11 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
             "cannot call review assignment, not enough reviewers joined"
         );
 
-        currentState = State.STARTED;
+        currentState = ExecutionState.STARTED;
         uint256 amountOfReviewers = (randomValue % 4) + 2;
         getRandomAddresses(amountOfReviewers);
+
+        individualReward = reward / selectedReviewers.length;
     }
 
     /**
@@ -187,8 +221,21 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
     }
 
     /**
+     * @notice functions that reviewers can call to receive payment for their review
+     * @dev 
+]    */
+    function claimReward() public onlySelectedReviewers {
+        require(!hasClaimed[msg.sender], "you already claimed");
+        require(hasSubmited[msg.sender], "you must submit a review first");
+        payable(msg.sender).transfer(individualReward);
+        emit Transfer(address(this), msg.sender, individualReward);
+    }
+
+    /**
      * @notice researchers that wants his work reviewed MUST call this function.
      * before assinging reviewers. 
+     * @dev this is a prototype contract. I'm giving any number here, just to 
+     * be able to make tests locally
 ]    */
     function getRandomNumber() public returns (bytes32 requestId) {
         randomValue = 12309128309213098;
@@ -206,6 +253,10 @@ contract PrototypeReviewHandler is VRFConsumerBase, Ownable {
      * If the sender puts a category that does not exist in enum, it will simply not be selected.
      */
     function joinAsReviewer() public {
+        require(
+            currentState == ExecutionState.WAITING_FOR_START,
+            "review process has already started"
+        );
         require(msg.sender != owner(), "you cannot review yourself");
         possibleReviewers.add(msg.sender);
     }
