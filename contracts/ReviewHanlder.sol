@@ -38,11 +38,13 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
     address[] public sentReviews;
     mapping(address => bool) public hasSubmited;
     mapping(address => bool) public hasClaimed;
+    mapping(address => bool) public reviewValidated;
 
     event Transfer(address sender, address receiver, uint256 amount);
     event Deposit(address sender, uint256 amount);
     event SentReview(address nftContract, uint256 tokenId, address from);
     event GenratedRandom(bytes32 indexed requestId, uint256 indexed result);
+    event ReviewValidated(address indexed reviewer);
 
     event PaperToReviewSetted(
         address nftContract,
@@ -245,8 +247,24 @@ contract ReviewHandler is VRFConsumerBase, Ownable {
     function claimReward() public onlySelectedReviewers {
         require(!hasClaimed[msg.sender], "you already claimed");
         require(hasSubmited[msg.sender], "you must submit a review first");
+        require(
+            reviewValidated[msg.sender],
+            "owner has not validated your review yet"
+        );
         payable(msg.sender).transfer(individualReward);
         emit Transfer(address(this), msg.sender, individualReward);
+    }
+
+    /**
+     * @notice functions that the owner can call to set a review as valid.
+     * NOTE: only after a review is valid, a reviewer can claim his reward. 
+     * This mehcanism centrralizes reward distribuition over the owner, 
+     * but at least it protects against really lazy reviewers or just 
+     * people trying to receive a reward and do nothing.
+]    */
+    function validateReview(address _reviewer) public onlyOwner {
+        reviewValidated[_reviewer] = true;
+        emit ReviewValidated(_reviewer);
     }
 
     /**

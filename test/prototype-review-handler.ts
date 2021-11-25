@@ -115,6 +115,17 @@ describe("Review Handler", function () {
     }
   });
 
+  it("issuer of paper nft should validate their reviews", async () => {
+    const accounts = await ethers.getSigners();
+    for (let i = 1; i < 9; i++) {
+      if (reviewers.indexOf(accounts[i].address) >= 0) {
+        await reviewHandler
+          .connect(accounts[0])
+          .validateReview(accounts[i].address);
+      }
+    }
+  });
+
   it("Reviewers should claim their reward for reviewing", async () => {
     const accounts = await ethers.getSigners();
     for (let i = 1; i < 9; i++) {
